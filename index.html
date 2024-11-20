@@ -46,7 +46,7 @@
 <body>
     <div id="wrapper">
         <div id="info">
-            <h1>Penrose Tiling</h1>
+            <h1>Penrose Tiling Generation</h1>
             <p id="current-depth">Depth: 0</p>
         </div>
         <canvas id="main" width="700" height="700"></canvas>
@@ -60,20 +60,20 @@
         let currentDepth = 0;
         const maxDepth = 8;
 
-        // Expanded color sets for dynamic alternation
+        // Color sets for variety
         const colorSets = [
-            ["#4682b4", "#ff6347"], // SteelBlue & Tomato
-            ["#2e8b57", "#ffa500"], // SeaGreen & Orange
-            ["#8a2be2", "#deb887"], // BlueViolet & BurlyWood
-            ["#556b2f", "#dc143c"], // DarkOliveGreen & Crimson
-            ["#ff69b4", "#1e90ff"], // HotPink & DodgerBlue
-            ["#8b4513", "#7fffd4"], // SaddleBrown & Aquamarine
-            ["#d2691e", "#ff7f50"], // Chocolate & Coral
-            ["#32cd32", "#ba55d3"], // LimeGreen & MediumOrchid
-            ["#ff4500", "#00ced1"], // OrangeRed & DarkTurquoise
-            ["#9400d3", "#ffff54"], // DarkViolet & LightYellow
-            ["#00bfff", "#cd5c5c"], // DeepSkyBlue & IndianRed
-            ["#7cfc00", "#ffdab9"], // LawnGreen & PeachPuff
+            ["#4682b4", "#ff6347"],
+            ["#2e8b57", "#ffa500"],
+            ["#8a2be2", "#deb887"],
+            ["#556b2f", "#dc143c"],
+            ["#ff69b4", "#1e90ff"],
+            ["#8b4513", "#7fffd4"],
+            ["#d2691e", "#ff7f50"],
+            ["#32cd32", "#ba55d3"],
+            ["#ff4500", "#00ced1"],
+            ["#9400d3", "#ffff54"], 
+            ["#00bfff", "#cd5c5c"], 
+            ["#7cfc00", "#ffdab9"], 
         ];
         let currentColorSetIndex = 0;
 
@@ -191,6 +191,7 @@
             }
         }
 
+        // Drawing logic
         function drawPenroseTiling(depth) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -228,7 +229,7 @@
                 currentColorSetIndex = (currentColorSetIndex + 1) % colorSets.length; // Cycle colors
             }
 
-            setTimeout(cycleDepths, 2000);
+            setTimeout(cycleDepths, 4000); // Set delay between cycles
         }
 
         cycleDepths();
