@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penrose Tiling</title>
+    <style type="text/css">
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+        }
+
+        #wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        canvas {
+            display: block;
+            background-color: #f0f8ff;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #info {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin: 0;
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        <div id="info">
+            <h1>Penrose Tiling</h1>
+            <p id="current-depth">Depth: 0</p>
+        </div>
+        <canvas id="main" width="700" height="700"></canvas>
+    </div>
+    <script type="text/javascript">
+        const GOLDEN_RATIO = 0.6180339887498948482;
+        const canvas = document.getElementById("main");
+        const ctx = canvas.getContext("2d");
+        const currentDepthDisplay = document.getElementById("current-depth");
+
+        let currentDepth = 0;
+        const maxDepth = 9;
+
+        // Color sets for dynamic alternation (avoiding canvas background color #f0f8ff)
+        const colorSets = [
+            ["#4682b4", "#ff6347"], // SteelBlue & Tomato
+            ["#2e8b57", "#ffa500"], // SeaGreen & Orange
+            ["#8a2be2", "#deb887"], // BlueViolet & BurlyWood
+            ["#556b2f", "#dc143c"], // DarkOliveGreen & Crimson
+            ["#ff69b4", "#1e90ff"], // HotPink & DodgerBlue
+        ];
+        let currentColorSetIndex = 0;
+
+        class Vector {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+            }
+
+            static fromPoints(start, end) {
+                return new Vector(end.x - start.x, end.y - start.y);
+            }
+
+            multiply(multiplier) {
+                return new Vector(this.x * multiplier, this.y * multiplier);
+            }
+
+            add(vector) {
+                return new Vector(this.x + vector.x, this.y + vector.y);
+            }
+        }
+
+        class Triangle {
+            constructor(v1, v2, v3, fillColor) {
+                this.v1 = v1;
+                this.v2 = v2;
+                this.v3 = v3;
+                this.fillColor = fillColor;
+            }
+
+            draw(ctx) {
+                ctx.fillStyle = this.fillColor;
+                ctx.beginPath();
+                ctx.moveTo(this.v1.x, this.v1.y);
+                ctx.lineTo(this.v2.x, this.v2.y);
+                ctx.lineTo(this.v3.x, this.v3.y);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = "#333";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
+        class ThinLeftTriangle extends Triangle {
+            constructor(v1, v2, v3) {
+                super(v1, v2, v3, colorSets[currentColorSetIndex][0]);
+            }
+
+            split() {
+                const vector_13 = Vector.fromPoints(this.v1, this.v3).multiply(GOLDEN_RATIO);
+                const split_point_13 = this.v1.add(vector_13);
+
+                return [
+                    new ThinLeftTriangle(this.v2, this.v3, split_point_13),
+                    new ThickLeftTriangle(split_point_13, this.v1, this.v2),
+                ];
+            }
+        }
+
+        class ThinRightTriangle extends Triangle {
+            constructor(v1, v2, v3) {
+                super(v1, v2, v3, colorSets[currentColorSetIndex][0]);
+            }
+
+            split() {
+                const vector_12 = Vector.fromPoints(this.v1, this.v2).multiply(GOLDEN_RATIO);
+                const split_point_12 = this.v1.add(vector_12);
+
+                return [
+                    new ThinRightTriangle(this.v3, split_point_12, this.v2),
+                    new ThickRightTriangle(split_point_12, this.v3, this.v1),
+                ];
+            }
+        }
+
+        class ThickLeftTriangle extends Triangle {
+            constructor(v1, v2, v3) {
+                super(v1, v2, v3, colorSets[currentColorSetIndex][1]);
+            }
+
+            split() {
+                const vector_32 = Vector.fromPoints(this.v3, this.v2).multiply(GOLDEN_RATIO);
+                const split_point_32 = this.v3.add(vector_32);
+
+                const vector_31 = Vector.fromPoints(this.v3, this.v1).multiply(GOLDEN_RATIO);
+                const split_point_31 = this.v3.add(vector_31);
+
+                return [
+                    new ThickRightTriangle(split_point_31, split_point_32, this.v3),
+                    new ThinRightTriangle(split_point_32, split_point_31, this.v1),
+                    new ThickLeftTriangle(split_point_32, this.v1, this.v2),
+                ];
+            }
+        }
+
+        class ThickRightTriangle extends Triangle {
+            constructor(v1, v2, v3) {
+                super(v1, v2, v3, colorSets[currentColorSetIndex][1]);
+            }
+
+            split() {
+                const vector_21 = Vector.fromPoints(this.v2, this.v1).multiply(GOLDEN_RATIO);
+                const split_point_21 = this.v2.add(vector_21);
+
+                const vector_23 = Vector.fromPoints(this.v2, this.v3).multiply(GOLDEN_RATIO);
+                const split_point_23 = this.v2.add(vector_23);
+
+                return [
+                    new ThickRightTriangle(split_point_23, this.v3, this.v1),
+                    new ThinLeftTriangle(split_point_23, this.v1, split_point_21),
+                    new ThickLeftTriangle(split_point_21, this.v2, split_point_23),
+                ];
+            }
+        }
+
+        function drawPenroseTiling(depth) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const triangles = [];
+            const side = Math.min(canvas.width, canvas.height);
+            const center = new Vector(side / 2, side / 2);
+
+            const radius = side / 2;
+            const grad_increment = 36 * (Math.PI / 180);
+            for (let i = 0; i < 10; i++) {
+                const v1 = center.add(new Vector(Math.cos(grad_increment * i), Math.sin(grad_increment * i)).multiply(radius));
+                const v2 = center.add(new Vector(Math.cos(grad_increment * (i + 1)), Math.sin(grad_increment * (i + 1))).multiply(radius));
+                const TriangleClass = i % 2 === 0 ? ThinRightTriangle : ThinLeftTriangle;
+                triangles.push(new TriangleClass(center, v1, v2));
+            }
+
+            for (let round = 0; round < depth; round++) {
+                const newTriangles = triangles.flatMap(triangle => triangle.split());
+                triangles.length = 0;
+                triangles.push(...newTriangles);
+            }
+
+            triangles.forEach(triangle => triangle.draw(ctx));
+        }
+
+        function cycleDepths() {
+            drawPenroseTiling(currentDepth);
+
+            currentDepthDisplay.textContent = `Depth: ${currentDepth}`;
+
+            if (currentDepth < maxDepth) {
+                currentDepth++;
+            } else {
+                currentDepth = 0;
+                currentColorSetIndex = (currentColorSetIndex + 1) % colorSets.length; // Change color set
+            }
+
+            setTimeout(cycleDepths, 2000);
+        }
+
+        cycleDepths();
+    </script>
+</body>
+</html>
